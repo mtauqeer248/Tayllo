@@ -1,0 +1,18 @@
+{
+  "name": "@es/ocr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+   "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@es/service-kit": "*",
+    "@es/shared": "*",
+    "sharp": "^0.33.5",
+    "zod": "^3.23.8"
+  }
+}

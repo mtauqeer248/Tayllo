@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #16181d;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+  --color-paper: #fafaf9;
+  --color-accent: #0f766e;
+  --color-warn: #b45309;
+  --color-warn-bg: #fef3c7;
+  --color-bad: #b91c1c;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ink: #f3f4f6;
+    --color-muted: #9ca3af;
+    --color-line: #2a2f37;
+    --color-paper: #111317;
+    --color-accent: #2dd4bf;
+    --color-warn: #fbbf24;
+    --color-warn-bg: #3b2f12;
+    --color-bad: #f87171;
+  }
+}
+
+body { background: var(--color-paper); color: var(--color-ink); overflow-x: clip; }
+html { scroll-behavior: smooth; }
+
+/* Landing page: sections that stretch edge-to-edge out of the narrow app column */
+.full-bleed { width: 100vw; margin-left: calc(50% - 50vw); }
+
+@layer components {
+  .card { @apply rounded-xl border border-line p-4; }
+  .btn { @apply inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50; }
+  .btn-ghost { @apply inline-flex items-center justify-center rounded-lg border border-line px-4 py-2 text-sm; }
+  .input { @apply w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm outline-none focus:border-accent; }
+  .label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-muted; }
+  .flag { @apply rounded-md bg-warn-bg px-2 py-1 text-xs text-warn; }
+}

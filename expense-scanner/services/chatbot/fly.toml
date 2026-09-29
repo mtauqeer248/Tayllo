@@ -1,0 +1,27 @@
+# fly launch --no-deploy --config services/chatbot/fly.toml
+# fly deploy --config services/chatbot/fly.toml --dockerfile Dockerfile.service --build-arg SERVICE=chatbot
+app = "es-chatbot"
+primary_region = "fra"   # Frankfurt — GDPR data residency
+
+[build]
+  dockerfile = "../../Dockerfile.service"
+  [build.args]
+    SERVICE = "chatbot"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

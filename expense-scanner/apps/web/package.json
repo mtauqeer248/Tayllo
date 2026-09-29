@@ -1,0 +1,28 @@
+{
+  "name": "@es/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@es/shared": "*",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.46.1",
+    "next": "^16.3.7",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

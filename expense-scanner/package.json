@@ -1,0 +1,28 @@
+{
+  "name": "expense-scanner",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,ocr,ledger,chatbot -c blue,green,yellow,magenta \"npm run dev -w @es/web\" \"npm run dev -w @es/ocr\" \"npm run dev -w @es/ledger\" \"npm run dev -w @es/chatbot\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "concurrently": "^10.0.5",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

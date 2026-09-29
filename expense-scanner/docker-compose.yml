@@ -1,0 +1,17 @@
+# Local development: all services + web. Supabase runs via `npx supabase start`.
+services:
+  ocr:
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: ocr } }
+    env_file: .env
+    ports: ["4001:8080"]
+  ledger:
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: ledger } }
+    env_file: .env
+    ports: ["4002:8080"]
+  chatbot:
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: chatbot } }
+    env_file: .env
+    environment:
+      OCR_SERVICE_URL: http://ocr:8080
+      LEDGER_SERVICE_URL: http://ledger:8080
+    ports: ["4003:8080"]

@@ -1,0 +1,17 @@
+node_modules
+dist
+.next
+.env
+.env.*
+!.env.example
+android/app/build
+*.apk
+coverage
+
+# macOS / editors
+.DS_Store
+*.tsbuildinfo
+.vscode/
+.idea/
+# generated Android project (rebuilt by the APK workflow)
+apps/mobile/android/
