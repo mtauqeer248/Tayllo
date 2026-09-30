@@ -34,7 +34,7 @@ async function correct(formData: FormData) {
   }
   if (err) fail(`/receipts/${id}`, err);
   if (res?.is_flagged) done(`/receipts/${id}`, 'Saved. Some fields still look doubtful — please check them.');
-  done(`/receipts/${id}`, 'Saved — everything checks out.');
+  done('/receipts', 'Receipt saved — everything checks out.'); // back to the list once nothing is left to fix
 }
 
 async function retry(formData: FormData) {
@@ -43,7 +43,7 @@ async function retry(formData: FormData) {
   const id = Id.parse(formData.get('id'));
   let err: string | null = null;
   try {
-    await callService('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id } });
+    await callService('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id }, timeoutMs: 75_000 });
   } catch (e) {
     err = errorText(e, 'Still could not read this image. Try a clearer photo.');
   }

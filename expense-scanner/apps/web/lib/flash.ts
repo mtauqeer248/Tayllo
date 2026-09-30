@@ -26,11 +26,20 @@ export function fail(path: string, message: string): never {
 
 /** A user-safe error message: service validation messages pass through, internal errors don't. */
 export function errorText(e: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  const dev = process.env.NODE_ENV !== 'production';
   if (e instanceof ServiceError) {
-    if (e.status === 503 || e.status >= 500) return 'The service is unavailable right now. Please try again in a moment.';
+    if (e.status === 503 || e.status >= 500) {
+      return dev ? `Service error ${e.status}: ${e.message}` : 'The service is unavailable right now. Please try again in a moment.';
+    }
     return e.message.charAt(0).toUpperCase() + e.message.slice(1);
   }
   if (e instanceof Error && /fetch failed|ECONNREFUSED|timeout|aborted/i.test(e.message)) {
+    if (dev) {
+      const cause = (e as { cause?: { code?: string } }).cause?.code;
+      return cause === 'ECONNREFUSED'
+        ? 'A service is not running (connection refused). Restart npm run dev.'
+        : `Service did not answer: ${e.message}`;
+    }
     return 'The service is unavailable right now. Please try again in a moment.';
   }
   return fallback;

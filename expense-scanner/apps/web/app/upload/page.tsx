@@ -41,8 +41,9 @@ async function upload(formData: FormData) {
   let result: { is_flagged: boolean } | null = null;
   let problem: string | null = null;
   try {
-    result = await callService<{ is_flagged: boolean }>('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id } });
+    result = await callService<{ is_flagged: boolean }>('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id }, timeoutMs: 75_000 });
   } catch (e) {
+    console.error('[upload]', e);
     problem = errorText(e, 'We saved your photo but could not read it yet. Tap Retry on the receipt.');
   }
   if (problem) fail(`/receipts/${id}`, problem);

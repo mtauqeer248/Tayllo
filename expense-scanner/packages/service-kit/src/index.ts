@@ -66,7 +66,9 @@ export async function createService(aud: ServiceClaims['aud']): Promise<FastifyI
     if (err.name === 'ZodError') return reply.code(400).send({ error: 'invalid_request' });
     req.log.error({ err: { message: err.message, code: err.code } }, 'request failed');
     const status = err.statusCode && err.statusCode < 500 ? err.statusCode : 500;
-    return reply.code(status).send({ error: status === 500 ? 'internal_error' : err.message });
+    // in development, show the real reason so problems are easy to fix; production stays generic
+    const hide = status === 500 && process.env.NODE_ENV === 'production';
+    return reply.code(status).send({ error: hide ? 'internal_error' : err.message });
   });
 
   return app;

@@ -19,7 +19,12 @@ async function setConsent(formData: FormData) {
   if (!PURPOSES.some(([p]) => p === purpose)) return;
   const granted = formData.get('granted') === 'true';
   const { error } = await sb.from('consents').insert({ user_id: user.id, purpose, granted, policy_version: POLICY_VERSION });
-  if (error) fail('/settings/privacy', 'Could not update your consent. Please try again.');
+  if (error) {
+    console.error('[consent]', error.code, error.message, error.details ?? '', error.hint ?? '');
+    fail('/settings/privacy', process.env.NODE_ENV === 'production'
+      ? 'Could not update your consent. Please try again.'
+      : `Could not update your consent: ${error.message}`);
+  }
   done('/settings/privacy', granted ? 'Consent given' : 'Consent withdrawn');
 }
 

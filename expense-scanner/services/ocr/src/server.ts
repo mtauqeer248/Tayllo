@@ -35,7 +35,7 @@ app.post('/process', async (req) => {
       .jpeg({ quality: 82 })
       .toBuffer();
 
-    const extraction = await extractWithGroq(jpeg.toString('base64'), AbortSignal.timeout(30_000));
+    const extraction = await extractWithGroq(jpeg.toString('base64'), AbortSignal.timeout(60_000)); // Qwen thinks before answering
     const flags = validateReceipt(extraction);
     const isFlagged = flags.length > 0;
 
