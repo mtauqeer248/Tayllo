@@ -42,5 +42,12 @@ export function errorText(e: unknown, fallback = 'Something went wrong. Please t
     }
     return 'The service is unavailable right now. Please try again in a moment.';
   }
+  // Setup problems on the server: safe to name (no secret values), and they tell the owner what to fix.
+  if (e instanceof Error && /INTERNAL_SERVICE_SECRET/.test(e.message)) {
+    return 'Server setup problem: INTERNAL_SERVICE_SECRET is missing or too short on the web app.';
+  }
+  if (e instanceof TypeError && /URL/i.test(e.message)) {
+    return 'Server setup problem: a service URL is invalid (it must start with https://).';
+  }
   return fallback;
 }
