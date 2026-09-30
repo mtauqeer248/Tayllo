@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       app_url:
-        description: 'Deployed web app URL (https://...)'
+        description: 'Deployed web app URL (https://tayllo-web.vercel.app/)'
         required: true
 
 jobs:
