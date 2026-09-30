@@ -39,3 +39,7 @@ html { scroll-behavior: smooth; }
   .label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-muted; }
   .flag { @apply rounded-md bg-warn-bg px-2 py-1 text-xs text-warn; }
 }
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.toast { animation: toast-in .2s ease-out; }
+input[type=checkbox] { accent-color: var(--color-accent); }

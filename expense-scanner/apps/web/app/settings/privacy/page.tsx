@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/supabase';
 import { callService } from '@/lib/services';
+import { done, fail, errorText } from '@/lib/flash';
 import { POLICY_VERSION } from '@/lib/policy';
 import { date } from '@/lib/format';
 import { Submit } from '@/components/submit';
@@ -19,20 +18,27 @@ async function setConsent(formData: FormData) {
   const purpose = String(formData.get('purpose'));
   if (!PURPOSES.some(([p]) => p === purpose)) return;
   const granted = formData.get('granted') === 'true';
-  await sb.from('consents').insert({ user_id: user.id, purpose, granted, policy_version: POLICY_VERSION });
-  revalidatePath('/settings/privacy');
+  const { error } = await sb.from('consents').insert({ user_id: user.id, purpose, granted, policy_version: POLICY_VERSION });
+  if (error) fail('/settings/privacy', 'Could not update your consent. Please try again.');
+  done('/settings/privacy', granted ? 'Consent given' : 'Consent withdrawn');
 }
 
 async function eraseAccount(formData: FormData) {
   'use server';
   const { sb, user } = await requireUser();
-  if (formData.get('confirm') !== 'DELETE') redirect('/settings/privacy?erase=confirm');
-  await callService('ledger', '/gdpr/erase', user.id, { method: 'POST', body: { confirm: 'DELETE' }, timeoutMs: 120_000 });
+  if (formData.get('confirm') !== 'DELETE') fail('/settings/privacy', 'Type DELETE in capitals to confirm.');
+  let err: string | null = null;
+  try {
+    await callService('ledger', '/gdpr/erase', user.id, { method: 'POST', body: { confirm: 'DELETE' }, timeoutMs: 120_000 });
+  } catch (e) {
+    err = errorText(e, 'Could not delete your account. Please try again or contact support.');
+  }
+  if (err) fail('/settings/privacy', err);
   await sb.auth.signOut();
-  redirect('/login?erased=1');
+  done('/', 'Your account and all your data have been permanently deleted.');
 }
 
-export default async function PrivacySettings({ searchParams }: { searchParams: Promise<{ erase?: string; need?: string }> }) {
+export default async function PrivacySettings({ searchParams }: { searchParams: Promise<{ need?: string }> }) {
   const { sb, user } = await requireUser();
   const sp = await searchParams;
   const { data: consents } = await sb.from('consents').select('purpose, granted, created_at').order('created_at', { ascending: false });
@@ -75,7 +81,6 @@ export default async function PrivacySettings({ searchParams }: { searchParams: 
       <form action={eraseAccount} className="card space-y-2 border-bad text-sm">
         <p className="label text-bad">Delete account</p>
         <p>Permanently deletes your account, all receipts, images, splits, bank data and chat history. This cannot be undone.</p>
-        {sp.erase && <p className="flag">Type DELETE to confirm.</p>}
         <input className="input" name="confirm" placeholder="Type DELETE" autoComplete="off" />
         <Submit className="btn bg-bad" pending="Deleting…">Delete everything</Submit>
       </form>

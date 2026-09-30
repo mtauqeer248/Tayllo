@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUser } from '@/lib/supabase';
-import { callService, ServiceError } from '@/lib/services';
+import { callService } from '@/lib/services';
+import { done, fail, errorText } from '@/lib/flash';
 import { POLICY_VERSION } from '@/lib/policy';
 import { money, date } from '@/lib/format';
 import { Submit } from '@/components/submit';
@@ -12,8 +12,9 @@ const COUNTRIES = ['AT','BE','DE','DK','EE','ES','FI','FR','IE','IT','LT','LU','
 async function giveConsent() {
   'use server';
   const { sb, user } = await requireUser();
-  await sb.from('consents').insert({ user_id: user.id, purpose: 'bank_access', granted: true, policy_version: POLICY_VERSION });
-  revalidatePath('/bank');
+  const { error } = await sb.from('consents').insert({ user_id: user.id, purpose: 'bank_access', granted: true, policy_version: POLICY_VERSION });
+  if (error) fail('/bank', 'Could not save your consent. Please try again.');
+  done('/bank', 'Thanks — now choose your bank.');
 }
 
 async function connect(formData: FormData) {
@@ -22,31 +23,46 @@ async function connect(formData: FormData) {
   const body = z.object({ name: z.string().min(1), country: z.string().length(2) }).parse({
     name: formData.get('bank'), country: formData.get('country'),
   });
-  let url: string;
+  let url: string | null = null;
+  let err: string | null = null;
   try {
     ({ url } = await callService<{ url: string }>('ledger', '/bank/connect', user.id, { method: 'POST', body }));
   } catch (e) {
-    redirect(`/bank?error=${encodeURIComponent(e instanceof ServiceError ? e.message : 'failed')}`);
+    err = errorText(e, 'Could not start the bank connection.');
   }
+  if (err || !url) fail('/bank', err ?? 'Could not start the bank connection.');
   redirect(url);
 }
 
 async function sync() {
   'use server';
   const { user } = await requireUser();
-  await callService('ledger', '/bank/sync', user.id, { method: 'POST', body: {}, timeoutMs: 90_000 }).catch(() => undefined);
-  revalidatePath('/bank');
+  let res: { imported: number; matched: number } | null = null;
+  let err: string | null = null;
+  try {
+    res = await callService<{ imported: number; matched: number }>('ledger', '/bank/sync', user.id, { method: 'POST', body: {}, timeoutMs: 90_000 });
+  } catch (e) {
+    err = errorText(e, 'Bank sync failed. Please try again.');
+  }
+  if (err) fail('/bank', err);
+  done('/bank', `Synced. ${res?.imported ?? 0} payments checked, ${res?.matched ?? 0} matched to receipts.`);
 }
 
 async function revoke(formData: FormData) {
   'use server';
   const { user } = await requireUser();
   const id = z.string().uuid().parse(formData.get('id'));
-  await callService('ledger', `/bank/${id}/revoke`, user.id, { method: 'POST', body: {} });
-  revalidatePath('/bank');
+  let err: string | null = null;
+  try {
+    await callService('ledger', `/bank/${id}/revoke`, user.id, { method: 'POST', body: {} });
+  } catch (e) {
+    err = errorText(e, 'Could not revoke access.');
+  }
+  if (err) fail('/bank', err);
+  done('/bank', 'Bank access revoked and its data deleted.');
 }
 
-export default async function Bank({ searchParams }: { searchParams: Promise<{ country?: string; error?: string; connected?: string }> }) {
+export default async function Bank({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
   const { sb, user } = await requireUser();
   const sp = await searchParams;
   const country = COUNTRIES.includes(sp.country ?? '') ? sp.country! : 'DE';
@@ -64,8 +80,6 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ c
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Bank matching</h1>
       <p className="text-sm text-muted">Connect a bank account (read-only, PSD2 via Enable Banking) to match your receipts with card payments. Access expires after 90 days and can be revoked any time.</p>
-      {sp.error && <p className="flag">{sp.error}</p>}
-      {sp.connected && <p className="card text-sm">Bank connected. Press “Sync now”.</p>}
 
       {!consent?.granted ? (
         <form action={giveConsent} className="card space-y-3 text-sm">

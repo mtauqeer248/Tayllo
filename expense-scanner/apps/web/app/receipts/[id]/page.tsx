@@ -1,9 +1,9 @@
-import { notFound, redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { CATEGORIES, type FieldFlag } from '@es/shared';
 import { requireUser } from '@/lib/supabase';
-import { callService, ServiceError } from '@/lib/services';
+import { callService } from '@/lib/services';
+import { done, fail, errorText } from '@/lib/flash';
 import { money, date } from '@/lib/format';
 import { Submit } from '@/components/submit';
 
@@ -25,16 +25,30 @@ async function correct(formData: FormData) {
     category: String(formData.get('category') ?? '') || undefined,
     items_confirmed: formData.get('items_confirmed') === 'on' ? true : undefined,
   };
-  await callService('ocr', '/correct', user.id, { method: 'POST', body: { receipt_id: id, changes } });
-  revalidatePath(`/receipts/${id}`);
+  let res: { is_flagged: boolean } | null = null;
+  let err: string | null = null;
+  try {
+    res = await callService<{ is_flagged: boolean }>('ocr', '/correct', user.id, { method: 'POST', body: { receipt_id: id, changes } });
+  } catch (e) {
+    err = errorText(e, 'Could not save your changes. Please try again.');
+  }
+  if (err) fail(`/receipts/${id}`, err);
+  if (res?.is_flagged) done(`/receipts/${id}`, 'Saved. Some fields still look doubtful — please check them.');
+  done(`/receipts/${id}`, 'Saved — everything checks out.');
 }
 
 async function retry(formData: FormData) {
   'use server';
   const { user } = await requireUser();
   const id = Id.parse(formData.get('id'));
-  await callService('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id } }).catch(() => undefined);
-  revalidatePath(`/receipts/${id}`);
+  let err: string | null = null;
+  try {
+    await callService('ocr', '/process', user.id, { method: 'POST', body: { receipt_id: id } });
+  } catch (e) {
+    err = errorText(e, 'Still could not read this image. Try a clearer photo.');
+  }
+  if (err) fail(`/receipts/${id}`, err);
+  done(`/receipts/${id}`, 'Receipt read again');
 }
 
 async function split(formData: FormData) {
@@ -58,12 +72,14 @@ async function split(formData: FormData) {
     }
     body = { mode: 'custom', receipt_id: id, payer_id: user.id, shares };
   }
+  let err: string | null = null;
   try {
     await callService('ledger', '/splits', user.id, { method: 'POST', body });
   } catch (e) {
-    redirect(`/receipts/${id}?split_error=${encodeURIComponent(e instanceof ServiceError ? e.message : 'failed')}`);
+    err = errorText(e, 'Could not split this receipt. Please try again.');
   }
-  revalidatePath(`/receipts/${id}`);
+  if (err) fail(`/receipts/${id}`, err);
+  done(`/receipts/${id}`, 'Split saved');
 }
 
 async function remove(formData: FormData) {
@@ -72,15 +88,15 @@ async function remove(formData: FormData) {
   const id = Id.parse(formData.get('id'));
   const { data } = await sb.from('receipts').select('file_path').eq('id', id).single();
   if (data?.file_path) await sb.storage.from('receipts').remove([data.file_path]);
-  await sb.from('receipts').delete().eq('id', id);
-  redirect('/receipts');
+  const { error } = await sb.from('receipts').delete().eq('id', id);
+  if (error) fail(`/receipts/${id}`, 'Could not delete the receipt. Please try again.');
+  done('/receipts', 'Receipt and image deleted');
 }
 
-export default async function ReceiptPage({ params, searchParams }: {
-  params: Promise<{ id: string }>; searchParams: Promise<{ split_error?: string }>;
+export default async function ReceiptPage({ params }: {
+  params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sp = await searchParams;
   if (!Id.safeParse(id).success) notFound();
   const { sb, user } = await requireUser();
   const { data: r } = await sb.from('receipts')
@@ -164,7 +180,6 @@ export default async function ReceiptPage({ params, searchParams }: {
 
       <section className="card space-y-3">
         <p className="label">Split</p>
-        {sp.split_error && <p className="flag">{sp.split_error}</p>}
         {(r.expense_splits ?? []).length > 0 && (
           <ul className="text-sm">
             {r.expense_splits.map((s: { participant_id: string; amount_cents: number; status: string }) => (

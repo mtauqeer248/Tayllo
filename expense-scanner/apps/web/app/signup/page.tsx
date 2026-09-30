@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { POLICY_VERSION } from '@/lib/policy';
 import { Logo } from '@/components/logo';
+import { done, fail } from '@/lib/flash';
+import { Submit } from '@/components/submit';
 
 const Schema = z.object({
   display_name: z.string().trim().min(1).max(80),
@@ -17,14 +18,14 @@ const Schema = z.object({
 async function signup(formData: FormData) {
   'use server';
   const parsed = Schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) redirect('/signup?error=1');
+  if (!parsed.success) fail('/signup', 'Please check the form: a password of 10+ characters and the two required boxes ticked.');
   const v = parsed.data;
   const sb = await supabase();
   const { error } = await sb.auth.signUp({
     email: v.email,
     password: v.password,
     options: {
-      emailRedirectTo: `${process.env.APP_URL}/login?check=1`,
+      emailRedirectTo: `${process.env.APP_URL}/login?ok=${encodeURIComponent('Email confirmed. You can sign in now.')}`,
       data: {
         display_name: v.display_name,
         policy_version: POLICY_VERSION,
@@ -32,17 +33,15 @@ async function signup(formData: FormData) {
       },
     },
   });
-  if (error) redirect('/signup?error=1');
-  redirect('/login?check=1');
+  if (error) fail('/signup', /password/i.test(error.message) ? error.message : 'Could not create the account. Please try again.');
+  done('/login', 'Account created. Check your email to confirm it, then sign in.');
 }
 
-export default async function SignupPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const sp = await searchParams;
+export default async function SignupPage() {
   return (
     <div className="mx-auto mt-12 max-w-sm space-y-6">
       <Link href="/" aria-label="Home"><Logo size={36} className="text-2xl" /></Link>
       <h1 className="text-2xl font-semibold">Create account</h1>
-      {sp.error && <p className="flag">Please check the form: password 10+ characters and the required boxes ticked.</p>}
       <form action={signup} className="space-y-3">
         <input className="input" name="display_name" placeholder="Your name" required maxLength={80} />
         <input className="input" name="email" type="email" placeholder="Email" autoComplete="email" required />
@@ -57,7 +56,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <label className="flex gap-2 text-sm text-muted">
           <input type="checkbox" name="marketing" /> <span>Optional: product update emails.</span>
         </label>
-        <button className="btn w-full">Create account</button>
+        <Submit className="btn w-full" pending="Creating account…">Create account</Submit>
       </form>
       <p className="text-sm text-muted">Already have an account? <Link href="/login" className="text-accent">Sign in</Link></p>
     </div>
