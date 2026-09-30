@@ -1,224 +1,207 @@
 <p align="center">
-  <img src="apps/web/public/icon.svg" alt="Tallyo logo" width="88" height="88" />
+  <img src="docs/screenshots/logo.svg" alt="Tallyo logo" width="96" height="96" />
 </p>
 
 <h1 align="center">Tallyo</h1>
 
-<p align="center"><b>Snap a receipt. Tallyo does the rest.</b><br/>
-AI expense tracker for Europe — scan receipts, catch mistakes, split bills fairly. GDPR-first, EU-hosted.</p>
+<p align="center">
+  <b>Snap a receipt. Tallyo does the rest.</b><br/>
+  An AI expense tracker for Europe that reads your receipts, catches mistakes and splits bills fairly.
+</p>
+
+<p align="center">
+  <a href="https://github.com/mtauqeer248/Tayllo/releases"><b>📱 Download for Android</b></a>
+  &nbsp;·&nbsp;
+  <a href="#-how-to-install-the-android-app">How to install</a>
+  &nbsp;·&nbsp;
+  <a href="#-how-it-works">How it works</a>
+  &nbsp;·&nbsp;
+  <a href="#-privacy">Privacy</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/hero-desktop.png" alt="Tallyo homepage" width="900" />
+</p>
 
 ---
 
-## Why Tallyo?
+## 🧾 The problem
 
-Receipts are small, but the hassle isn't:
+Receipts are small, but the hassle isn't.
 
-- **Paper piles up** — receipts fade, get lost, or end up in a shoebox until tax time.
-- **Typing is tedious** — copying merchant, date, VAT and every item into a spreadsheet is slow and error-prone.
-- **Splitting is awkward** — after a dinner, a trip or a month of shared groceries, working out who owes whom is easy to get wrong.
+- **Paper piles up.** Receipts fade, get lost in pockets, or end up in a shoebox you only open at tax time.
+- **Typing is tedious.** Copying the shop, date, VAT and every item into a spreadsheet takes minutes per receipt, and mistakes slip in.
+- **Splitting is awkward.** After a dinner, a trip or a month of shared groceries, working out *who owes whom* is slow and easy to get wrong.
 
-Tallyo turns a photo into clean, checked, shareable expense data in seconds.
+**Tallyo turns a photo of a receipt into clean, checked and shareable expense data in seconds.**
 
-## Features
+---
 
-| | |
-|---|---|
-| 📸 **Scan** | Photograph or upload a receipt or bill. Location data (EXIF/GPS) is stripped automatically. |
-| 🤖 **AI extraction** | Merchant, date, total, VAT, currency and every line item — understands European formats (`12,50 €`, `MwSt`, `TVA`, `IVA`, `BTW`). |
-| ⚠️ **Doubtful-field flagging** | Every value is re-checked in code: items vs. total, VAT above the EU maximum (27 %), impossible dates, low confidence, unreadable images. Suspicious fields are highlighted for one-tap correction; every correction is logged. |
-| 🤝 **Bill splitting** | Split equally, by item or with custom amounts. Tax and tips are shared pro rata, and shares always add up to the cent. Balances show who owes whom, with the fewest transfers to settle up. |
-| 🏦 **Bank matching** *(optional)* | Read-only PSD2 connection via Enable Banking. Card payments are matched to receipts, and payments without a receipt are highlighted. |
-| 💬 **Assistant** | Ask about your spending, fix flagged receipts, split bills or settle up in plain language. Always asks before changing anything, and only answers questions about Tallyo and your expenses. |
-| 🔒 **Privacy centre** | Manage consents, download all your data (JSON), or delete your account and everything in it — self-service. |
-| 📱 **Android app** | Capacitor shell with camera access; the APK is built by GitHub Actions. |
+## ✨ How it works
 
-## How it works
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/screenshots/upload.png" alt="Add a receipt" width="240" /></td>
+    <td align="center" width="33%"><img src="docs/screenshots/receipt.png" alt="AI reads and checks the receipt" width="240" /></td>
+    <td align="center" width="33%"><img src="docs/screenshots/splits.png" alt="Split the bill" width="240" /></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>1. Snap or pick a photo</b><br/>Take a new photo of a receipt or bill, or choose one that's already in your gallery.</td>
+    <td valign="top"><b>2. AI reads it, and Tallyo checks it</b><br/>The shop, date, total, VAT and every item are filled in for you. Anything that doesn't add up is highlighted, so you can fix it in one tap.</td>
+    <td valign="top"><b>3. Split and track</b><br/>Share the bill with friends equally, by item, or with custom amounts. It always adds up to the cent.</td>
+  </tr>
+</table>
 
-```
-Photo ──► Next.js (SSR) ──► OCR service ──► Groq Llama 4 Scout (reads the image)
-                                  │
-                                  ▼
-                   Deterministic validation (our code decides)
-                                  │
-               ┌──────────────────┴──────────────────┐
-               ▼                                     ▼
-        ✓ Ready                              ⚠ Needs review
-                                   (flagged fields highlighted for correction)
-```
+---
 
-**The AI extracts; our code decides.** The model never has the final word on arithmetic: totals, VAT and dates are recomputed and validated deterministically.
+## 🤖 How AI makes life easier
 
-## Architecture
+### It reads receipts the way a person would
 
-```
- Phone (APK) / Browser
-        │  HTTPS — session cookie only, no business logic in the client
-        ▼
- ┌──────────────────────────────┐   Vercel · fra1 (Frankfurt)
- │ apps/web — Next.js 16 (SSR)  │   Server Components + Server Actions
- │ UI + API gateway             │   signs 60 s HMAC service tokens
- └───────┬──────────┬─────────┬─┘
-         ▼          ▼         ▼            Fly.io · fra (Frankfurt)
-     ┌───────┐ ┌────────┐ ┌─────────┐
-     │  ocr  │ │ ledger │ │ chatbot │
-     └───┬───┘ └───┬────┘ └────┬────┘
-         │ Groq    │ Enable    │ Groq Llama 3.3 70B
-         │ vision  │ Banking   │ (tool calling + topic guard)
-         ▼         ▼           ▼
- ┌────────────────────────────────────────────┐  Supabase · eu-central-1
- │ Postgres (RLS on every table) + Storage     │
- └────────────────────────────────────────────┘
-```
+You don't need to type anything. Tallyo understands different receipt layouts, languages and number formats from across Europe, such as `12,50 €`, `€12.50`, *MwSt*, *TVA*, *IVA* and *BTW*.
 
-| Service | Responsibility |
-|---|---|
-| `apps/web` | Server-rendered UI, auth, input validation, API gateway |
-| `services/ocr` | Image normalisation, AI extraction, flagging, corrections |
-| `services/ledger` | Splits, balances, groups, bank sync & matching, GDPR erasure |
-| `services/chatbot` | AI assistant with tool access to every feature |
-| `packages/shared` | Zod schemas, validation, split maths (integer cents), matching, service tokens |
-| `packages/service-kit` | Fastify bootstrap: auth, rate limiting, security headers, DB client |
+### It never blindly trusts itself
 
-### Tech stack
+The AI reads the receipt, and then Tallyo **double-checks the numbers**:
 
-- **Frontend / gateway:** Next.js 16 (App Router, SSR, Server Actions), React 19, Tailwind CSS 4
-- **Services:** Node.js 22, TypeScript, Fastify 5
-- **Database / auth / storage:** Supabase (Postgres + Row-Level Security), EU Frankfurt
-- **AI:** Groq — Llama 4 Scout (vision), Llama 3.3 70B (assistant)
-- **Open banking:** Enable Banking (PSD2 AIS)
-- **Mobile:** Capacitor 8 (Android)
-- **Hosting:** Vercel (fra1) + Fly.io (fra)
+- Do the items add up to the total?
+- Is the VAT realistic? The highest EU rate is 27%.
+- Is the date possible?
+- Was the photo clear enough to read?
 
-## Project structure
+If something looks wrong, that field is **highlighted in yellow** so you can check it. Nothing is final until you're happy with it.
 
-```
-apps/
-  web/                 Next.js app (UI + gateway)
-  mobile/              Capacitor Android shell
-services/
-  ocr/  ledger/  chatbot/
-packages/
-  shared/              schemas, validation, splits, matching
-  service-kit/         shared Fastify setup
-supabase/migrations/   database schema, RLS, GDPR functions
-docs/                  architecture, development journey
-.github/workflows/     CI + Android APK build
-```
+### It splits bills fairly
 
-## Getting started
+Tallyo can split a bill **by item**, so whoever had the pasta pays for the pasta. Tax and tips are shared in proportion, and the shares always add up exactly. Your balances then show who owes whom, and you can mark debts as paid.
 
-### Prerequisites
+### An assistant that knows your expenses
 
-- Node.js 22+
-- A Supabase project in **Central EU (Frankfurt)**
-- A Groq API key
-- *(optional)* An Enable Banking application for bank matching
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/assistant.png" alt="Tallyo assistant" width="260" /></td>
+    <td valign="top">
+      Just ask, in your own words:
+      <ul>
+        <li><i>"How much did I spend on groceries this month?"</i></li>
+        <li><i>"Which receipts need checking?"</i></li>
+        <li><i>"Split my last receipt with the flat group."</i></li>
+        <li><i>"Who owes me money?"</i></li>
+      </ul>
+      The assistant can use every feature of the app, but it <b>always asks before changing anything</b>. It sticks to your expenses: it won't answer unrelated questions.
+    </td>
+  </tr>
+</table>
 
-### 1. Install
+### See where your money goes
 
-```bash
-npm install
-```
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="Monthly dashboard" width="260" /></td>
+    <td valign="top">
+      Your home screen shows at a glance:
+      <ul>
+        <li>What you spent this month, and on which categories</li>
+        <li>How much friends owe you, and how much you owe</li>
+        <li>Receipts that still need a quick check</li>
+      </ul>
+      You can also connect your bank (optional, read-only) to match card payments with receipts automatically, and see payments that are missing a receipt.
+    </td>
+  </tr>
+</table>
 
-### 2. Environment variables
+---
 
-```bash
-cp .env.example .env
-```
-
-Fill in `.env` (see the comments in `.env.example`), then copy it for the web app:
-
-```bash
-cp .env apps/web/.env.local
-```
-
-| Variable | Where to find it |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_URL` | Supabase → Project Settings → API (`https://<project>.supabase.co`) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → API Keys → publishable key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys → secret key — **never commit or share** |
-| `GROQ_API_KEY` | console.groq.com |
-| `INTERNAL_SERVICE_SECRET` | generate: `openssl rand -base64 48` |
-
-> `.env` and `.env.local` are git-ignored. Never commit real keys.
-
-### 3. Database
-
-In the Supabase **SQL Editor**, run in order:
-
-1. `supabase/migrations/0001_init.sql`
-2. `supabase/migrations/0002_gdpr.sql`
-
-### 4. Run
-
-```bash
-npm run dev
-```
-
-| App | URL |
-|---|---|
-| Web | http://localhost:3000 |
-| OCR service | http://localhost:4001 |
-| Ledger service | http://localhost:4002 |
-| Chatbot service | http://localhost:4003 |
-
-### Scripts
-
-| Command | What it does |
-|---|---|
-| `npm run dev` | Web app + all services with hot reload |
-| `npm test` | Unit tests (validation, splits, matching, tokens, parsing, topic guard) |
-| `npm run typecheck` | TypeScript checks for all packages |
-| `npm run build` | Production builds |
-
-## Deployment
-
-1. **Supabase:** Frankfurt project, run the migrations, enable `pg_cron` and schedule `public.run_retention()`.
-2. **Services (Fly.io):** for each of `ocr`, `ledger`, `chatbot`:
-   ```bash
-   fly launch --no-deploy --config services/<svc>/fly.toml
-   fly secrets set ... --config services/<svc>/fly.toml
-   fly deploy --config services/<svc>/fly.toml
-   ```
-3. **Web (Vercel):** import the repo with root directory `apps/web`; the region is pinned to `fra1` by `vercel.json`. Add the env vars, including `OCR_SERVICE_URL`, `LEDGER_SERVICE_URL` and `CHATBOT_SERVICE_URL`.
-4. **Groq:** enable Zero Data Retention and sign the DPA.
-5. **Enable Banking:** register the app and set the redirect URL to `https://<your-domain>/bank/callback`.
-
-## Android APK
-
-GitHub → **Actions → Build Android APK → Run workflow** → enter your deployed URL → download the `receipt-scanner-apk` artifact.
-
-Locally (JDK 21 + Android SDK):
-
-```bash
-cd apps/mobile && npm install && npx cap add android
-APP_URL=https://your-domain npm run apk:debug
-```
-
-## Privacy & security
+## 👥 Who it's for
 
 | | |
 |---|---|
-| **EU data residency** | Database, storage and servers in Frankfurt |
-| **Access control** | Row-Level Security on every table; services verify short-lived, audience-bound HMAC tokens |
-| **GDPR rights** | Self-service data export (Art. 15/20), correction (Art. 16), erasure (Art. 17) |
-| **Consent** | Versioned, recorded consents; AI processing and bank access are opt-in |
-| **Retention** | Chat history 30 days; raw AI output 1 year; expired bank consents closed automatically |
-| **Minimisation** | EXIF stripped, no data about non-users, bank data deleted on revoke |
-| **Web security** | Strict CSP, HSTS, frame-deny, no third-party scripts or trackers |
-| **AI safety** | Assistant limited to Tallyo topics; confirmation before any change; tool output treated as untrusted |
+| 🏠 **Flatmates** | Share groceries and bills without a spreadsheet. |
+| ✈️ **Travellers** | Split a trip's costs fairly, in any EU currency. |
+| 💼 **Freelancers** | Keep VAT-ready records of every business expense. |
+| 👨‍👩‍👧 **Families** | See where the monthly budget actually goes. |
 
-The privacy notice in the app is a **template** and must be reviewed by a lawyer or DPO before launch.
+---
 
-## Documentation
+## 🔒 Privacy
 
-- [`docs/architecture.md`](docs/architecture.md): design, data flow, security and GDPR mapping
-- [`docs/journey.md`](docs/journey.md): development log and every approved decision
+Your financial data deserves European standards.
 
-## Status
+- **Stored in the EU:** the database, files and servers are in Frankfurt, Germany.
+- **Only you see your data:** strict per-user access rules. Groups only see what you share with them.
+- **Your rights, built in:** download all your data or delete your account yourself, any time, from *Settings*.
+- **Photos are cleaned:** location data is removed from every photo. The AI provider does not keep your images.
+- **Read-only banking:** bank access is optional, regulated under PSD2, cannot move money, and expires after 90 days.
+- **No ads and no trackers:** your data is never used for advertising.
 
-Early development (v0.1). See the *Next steps* section in `docs/journey.md` for the roadmap.
+---
 
-## License
+## 📱 How to install the Android app
 
-No license has been chosen yet — all rights reserved by the author.
+<table>
+  <tr>
+    <td width="40%"><img src="docs/screenshots/landing.png" alt="Tallyo on a phone" width="240" /></td>
+    <td valign="top">
+      <ol>
+        <li>On your <b>Android phone</b>, open the <a href="https://github.com/mtauqeer248/Tayllo/releases"><b>Releases page</b></a> and tap <b>tallyo.apk</b> under the newest version to download it.</li>
+        <li>Open the downloaded file. If Android asks, allow your browser to <b>install unknown apps</b>, then go back.</li>
+        <li>Tap <b>Install</b>. If Google Play Protect shows a warning, tap <b>More details → Install anyway</b>. The warning appears because this is an early version that isn't on the Play Store yet.</li>
+        <li>Open <b>Tallyo</b>, tap <b>Start free</b>, create your account and confirm your email.</li>
+        <li>Tap <b>Scan</b>, then take a photo or choose one from your gallery. That's it.</li>
+      </ol>
+      <b>iPhone?</b> Open the Tallyo website in Safari and tap <b>Share → Add to Home Screen</b>.<br/><br/>
+      The app needs an internet connection.
+    </td>
+  </tr>
+</table>
+
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>What if the AI reads something wrong?</b></summary>
+<br/>
+That's exactly why Tallyo double-checks every receipt. Suspicious values are highlighted, and nothing is final until you confirm it. Every correction is saved in the receipt's history.
+</details>
+
+<details>
+<summary><b>Which receipts and countries work?</b></summary>
+<br/>
+Printed receipts, invoices and bills from across Europe, in the common EU languages and currencies. Clear, flat and well-lit photos work best.
+</details>
+
+<details>
+<summary><b>Do my friends need an account to split with me?</b></summary>
+<br/>
+Yes. To protect their privacy, Tallyo doesn't store data about people who haven't signed up. Creating a free account takes about a minute.
+</details>
+
+<details>
+<summary><b>Do I have to connect my bank?</b></summary>
+<br/>
+No. Bank matching is optional, and everything else works without it.
+</details>
+
+<details>
+<summary><b>How do I delete my data?</b></summary>
+<br/>
+Open <i>Settings → Delete everything</i>. Your account, receipts, photos, splits and bank data are permanently erased.
+</details>
+
+---
+
+## 🛠️ For developers
+
+Tallyo is a full-stack TypeScript project: a server-rendered Next.js app, three microservices (OCR, ledger and the AI assistant), a Supabase (PostgreSQL) database in the EU, Groq Llama models for AI, and a Capacitor Android app.
+
+➡️ **Setup, architecture and deployment:** [`expense-scanner/README.md`](expense-scanner/README.md)<br/>
+➡️ **Architecture and GDPR design:** [`expense-scanner/docs/architecture.md`](expense-scanner/docs/architecture.md)<br/>
+➡️ **Development journey and decisions:** [`expense-scanner/docs/journey.md`](expense-scanner/docs/journey.md)
+
+---
+
+<p align="center">
+  <sub>Tallyo is an early version (v0.1). Feedback is very welcome, so please <a href="https://github.com/mtauqeer248/Tayllo/issues">open an issue</a>.<br/>
+  Screenshots show sample data.</sub>
+</p>

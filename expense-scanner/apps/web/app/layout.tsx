@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body className="min-h-dvh font-sans antialiased">
         {!isHome && (
-          <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-line bg-paper">
             <nav className="relative mx-auto flex max-w-4xl items-center gap-4 px-4 py-2.5 text-sm">
               <Link href="/" className="text-ink" aria-label={`${BRAND.name} home`}><Logo size={26} /></Link>
               {user ? (

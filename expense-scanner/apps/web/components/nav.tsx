@@ -57,7 +57,7 @@ export function AppNav() {
 
       {open && (
         <>
-          <button aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 top-[57px] z-20 bg-black/30 md:hidden" />
+          <button aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-x-0 bottom-0 top-[57px] z-20 bg-black/30 md:hidden" />
           <div id="mobile-menu" className="absolute inset-x-0 top-full z-30 border-b border-line bg-paper px-4 pb-4 pt-2 shadow-lg md:hidden">
             <nav className="flex flex-col">{NAV.map(([h, l]) => link(h, l, true))}</nav>
             <form action="/auth/signout" method="post" className="mt-2 border-t border-line pt-3">
