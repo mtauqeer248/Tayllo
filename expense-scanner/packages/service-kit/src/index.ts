@@ -19,7 +19,7 @@ export function env(name: string, fallback?: string): string {
 let admin: SupabaseClient | null = null;
 /** Service-role client. Every query MUST be scoped by the verified userId. */
 export function db(): SupabaseClient {
-  admin ??= createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
+  admin ??= createClient(env('SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL), env('SUPABASE_SERVICE_ROLE_KEY'), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return admin;
@@ -80,5 +80,26 @@ export async function start(app: FastifyInstance, defaultPort: number) {
 export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
     super(message);
+  }
+}
+
+/**
+ * Startup self-check (non-blocking): verifies the Groq key once and logs a clear,
+ * masked result — so a bad key shows up in the service log (terminal / Render) immediately.
+ */
+export async function checkGroqKey(app: FastifyInstance): Promise<void> {
+  const k = process.env.GROQ_API_KEY ?? '';
+  const masked = k ? `${k.slice(0, 4)}…${k.slice(-4)} (${k.length} chars)` : 'MISSING';
+  if (!k) { app.log.error('Groq key MISSING — set GROQ_API_KEY'); return; }
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { authorization: `Bearer ${k}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) app.log.info(`Groq key OK: ${masked}`);
+    else if (res.status === 401) app.log.error(`Groq key REJECTED (Invalid API Key): ${masked} — create a new one at console.groq.com/keys`);
+    else app.log.warn(`Groq key check returned HTTP ${res.status}: ${masked}`);
+  } catch (e) {
+    app.log.warn(`Groq key check skipped (network: ${(e as Error).message}): ${masked}`);
   }
 }

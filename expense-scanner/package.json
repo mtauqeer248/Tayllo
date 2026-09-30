@@ -12,7 +12,9 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "predev": "node scripts/check-env.mjs",
+    "check": "node scripts/check-env.mjs --strict"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
@@ -21,9 +23,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4",
-      "@capacitor/cli": "^8.5.2",
-  "@capacitor/assets": "^3.0.5"
-
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/assets": "^3.0.5"
   },
   "engines": {
     "node": ">=20"

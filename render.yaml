@@ -21,7 +21,7 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: GROQ_VISION_MODEL
-        value: meta-llama/llama-4-scout-17b-16e-instruct
+        value: qwen/qwen3.8-27b
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -80,7 +80,9 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: GROQ_CHAT_MODEL
-        value: llama-3.3-70b-versatile
+        value: openai/gpt-oss-120b
+      - key: GROQ_GUARD_MODEL
+        value: openai/gpt-oss-20b
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY

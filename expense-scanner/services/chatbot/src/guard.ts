@@ -36,10 +36,11 @@ export async function isInScope(message: string, lastAssistant: string | null): 
     method: 'POST',
     headers: { authorization: `Bearer ${env('GROQ_API_KEY')}`, 'content-type': 'application/json' },
     body: JSON.stringify({
-      // Uses the chat model by default; set GROQ_GUARD_MODEL to a smaller/faster model if you like.
-      model: process.env.GROQ_GUARD_MODEL || env('GROQ_CHAT_MODEL', 'llama-3.3-70b-versatile'),
+      model: process.env.GROQ_GUARD_MODEL || 'openai/gpt-oss-20b',
       temperature: 0,
-      max_completion_tokens: 20,
+      // reasoning model: needs room to think before the tiny JSON answer
+      max_completion_tokens: 400,
+      reasoning_effort: 'low',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: CLASSIFIER_PROMPT },
@@ -60,8 +61,9 @@ export async function isInScope(message: string, lastAssistant: string | null): 
 
 /** Anything that isn't a clear `true` counts as out of scope (fail closed). */
 export function parseVerdict(content: string): boolean {
+  const json = content.match(/\{[\s\S]*\}/)?.[0] ?? content; // tolerate text around the JSON
   try {
-    return (JSON.parse(content) as { in_scope?: unknown }).in_scope === true;
+    return (JSON.parse(json) as { in_scope?: unknown }).in_scope === true;
   } catch {
     return false;
   }

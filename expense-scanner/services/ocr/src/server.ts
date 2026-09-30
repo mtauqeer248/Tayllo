@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { z } from 'zod';
-import { audit, createService, db, HttpError, start } from '@es/service-kit';
+import { audit, checkGroqKey, createService, db, HttpError, start } from '@es/service-kit';
 import { ReceiptCorrectionSchema, summariseFlags, toCents, validateReceipt } from '@es/shared';
 import { extractWithGroq } from './groq';
 
@@ -158,3 +158,5 @@ function isValidDate(s: string | null): s is string {
 }
 
 await start(app, 4001);
+void checkGroqKey(app); // logs whether the Groq key works (masked)
+app.log.info(`Groq vision model: ${process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b'}`);

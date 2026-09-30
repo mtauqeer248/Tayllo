@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createService, db, env, HttpError, start } from '@es/service-kit';
+import { checkGroqKey, createService, db, env, HttpError, start } from '@es/service-kit';
 import { runTool, TOOL_DEFS } from './tools';
 import { isInScope, isShortFollowUp, OFF_TOPIC_REPLY } from './guard';
 
@@ -93,9 +93,11 @@ async function callGroq(messages: Msg[], log: { error: (o: object, m: string) =>
       method: 'POST',
       headers: { authorization: `Bearer ${env('GROQ_API_KEY')}`, 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: env('GROQ_CHAT_MODEL', 'llama-3.3-70b-versatile'),
+        model: env('GROQ_CHAT_MODEL', 'openai/gpt-oss-120b'),
         temperature: 0.2,
-        max_completion_tokens: 600,
+        // gpt-oss is a reasoning model: its thinking counts toward this limit, so leave room for the answer
+        max_completion_tokens: 2000,
+        reasoning_effort: 'low',
         messages,
         ...(withTools ? { tools: TOOL_DEFS, tool_choice: 'auto' } : {}),
       }),
@@ -125,3 +127,5 @@ app.delete('/chat', async (req) => {
 });
 
 await start(app, 4003);
+void checkGroqKey(app); // logs whether the Groq key works (masked)
+app.log.info(`Groq chat model: ${env('GROQ_CHAT_MODEL', 'openai/gpt-oss-120b')}`);

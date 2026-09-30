@@ -5,16 +5,17 @@ import { RECEIPT_SYSTEM_PROMPT } from './prompt';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 /**
- * Send the image to Groq Llama 4 Scout and parse a strict JSON extraction.
+ * Send the image to Groq's vision model (Qwen 3.8) and parse a strict JSON extraction.
  * The image is sent inline (base64) — Groq does not retain it (zero data retention
  * must be enabled in the Groq console for GDPR).
  */
 export async function extractWithGroq(jpegBase64: string, signal?: AbortSignal): Promise<ExtractedReceipt> {
-  const body = {
-    model: env('GROQ_VISION_MODEL', 'meta-llama/llama-4-scout-17b-16e-instruct'),
+  const body: Record<string, unknown> = {
+    model: env('GROQ_VISION_MODEL', 'qwen/qwen3.8-27b'),
     temperature: 0,
-    max_completion_tokens: 2048,
+    max_completion_tokens: 4096,
     response_format: { type: 'json_object' },
+    reasoning_format: 'hidden', // Qwen can "think" first; keep only the JSON answer
     messages: [
       { role: 'system', content: RECEIPT_SYSTEM_PROMPT },
       {
@@ -40,7 +41,17 @@ export async function extractWithGroq(jpegBase64: string, signal?: AbortSignal):
       await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
       continue;
     }
-    if (!res.ok) throw new Error(`Groq error ${res.status}`);
+    if (!res.ok) {
+      const text = await res.text();
+      // Older/other models may not accept reasoning_format — retry once without it.
+      if (res.status === 400 && 'reasoning_format' in body && /reasoning/i.test(text)) {
+        delete body.reasoning_format;
+        continue;
+      }
+      let detail = text.slice(0, 200);
+      try { detail = (JSON.parse(text) as { error?: { message?: string } }).error?.message ?? detail; } catch { /* raw */ }
+      throw new Error(`Groq error ${res.status}: ${detail}`);
+    }
     const json = (await res.json()) as { choices: { message: { content: string } }[] };
     const content = json.choices[0]?.message.content ?? '{}';
     return parseExtraction(content);
@@ -51,8 +62,11 @@ export async function extractWithGroq(jpegBase64: string, signal?: AbortSignal):
 /** Tolerant parsing: coerce "12,50" strings into numbers, then validate with zod. */
 export function parseExtraction(content: string): ExtractedReceipt {
   let raw: unknown;
+  // strip any <think>…</think> block and text around the JSON object
+  const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '');
+  const json = cleaned.match(/\{[\s\S]*\}/)?.[0] ?? cleaned;
   try {
-    raw = JSON.parse(content);
+    raw = JSON.parse(json);
   } catch {
     return ExtractedReceiptSchema.parse({ merchant_name: null, date: null, vat_amount: null, total_amount: null, unreadable: true });
   }
