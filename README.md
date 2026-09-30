@@ -18,6 +18,8 @@
   &nbsp;·&nbsp;
   <a href="#-how-it-works">How it works</a>
   &nbsp;·&nbsp;
+  <a href="#-whats-new">What's new</a>
+  &nbsp;·&nbsp;
   <a href="#-privacy">Privacy</a>
 </p>
 
@@ -53,6 +55,20 @@ Receipts are small, but the hassle isn't.
     <td valign="top"><b>3. Split and track</b><br/>Share the bill with friends equally, by item, or with custom amounts. It always adds up to the cent.</td>
   </tr>
 </table>
+
+---
+
+## 🆕 What's new
+
+**September 2026**
+
+- **Smarter receipt reading.** Tallyo now uses newer AI models: *Qwen 3.8* reads receipts and *GPT-OSS* powers the assistant. It copes better with different layouts, European dates like `28.09.2026` and amounts like `21,00`, and it keeps every detail it could read instead of giving up on the whole receipt.
+- **Clearer checking.** After you fix a highlighted field and everything adds up, Tallyo takes you straight back to your receipts list.
+- **Better on phones.** The menu folds away behind a button, **Take photo** opens the camera in the Android app, **Choose from gallery** picks an existing photo, and every action shows a short success or error message.
+- **An assistant that stays on topic.** It only answers questions about your receipts, spending, splits and settings.
+- **EU servers for everything.** The AI and ledger services now run in Frankfurt alongside the database.
+
+> The first scan or chat after a quiet period can take up to a minute while the servers wake up. After that it's fast.
 
 ---
 
@@ -174,6 +190,12 @@ Printed receipts, invoices and bills from across Europe, in the common EU langua
 </details>
 
 <details>
+<summary><b>Why is the first scan sometimes slow?</b></summary>
+<br/>
+Tallyo's servers go to sleep when nobody is using them. The first request after a break wakes them up, which can take up to a minute. After that, scans take a few seconds.
+</details>
+
+<details>
 <summary><b>Do my friends need an account to split with me?</b></summary>
 <br/>
 Yes. To protect their privacy, Tallyo doesn't store data about people who haven't signed up. Creating a free account takes about a minute.
@@ -195,7 +217,7 @@ Open <i>Settings → Delete everything</i>. Your account, receipts, photos, spli
 
 ## 🛠️ For developers
 
-Tallyo is a full-stack TypeScript project: a server-rendered Next.js app, three microservices (OCR, ledger and the AI assistant), a Supabase (PostgreSQL) database in the EU, Groq Llama models for AI, and a Capacitor Android app.
+Tallyo is a full-stack TypeScript project: a server-rendered Next.js app, three microservices (OCR, ledger and the AI assistant) hosted on Render in Frankfurt, a Supabase (PostgreSQL) database in the EU, Groq-hosted AI models (Qwen 3.8 for vision, GPT-OSS for the assistant), and a Capacitor Android app.
 
 ➡️ **Setup, architecture and deployment:** [`expense-scanner/README.md`](expense-scanner/README.md)<br/>
 ➡️ **Architecture and GDPR design:** [`expense-scanner/docs/architecture.md`](expense-scanner/docs/architecture.md)<br/>

@@ -10,14 +10,14 @@
  │  • API gateway              │  • signs 60 s HMAC service token {sub:userId, aud}
  └──────┬─────────┬──────────┬─┘
         │         │          │
-        ▼         ▼          ▼            Fly.io fra (Frankfurt)
+        ▼         ▼          ▼            Render (Frankfurt)
    ┌────────┐ ┌────────┐ ┌─────────┐
    │  ocr   │ │ ledger │ │ chatbot │──── calls ocr/ledger with the same user's token
    └───┬────┘ └───┬────┘ └────┬────┘
        │          │           │
-       │ Groq     │ Enable    │ Groq Llama 3.3 70B (tool calling)
-       │ Llama 4  │ Banking   │
-       │ Scout    │ (PSD2)    │
+       │ Groq     │ Enable    │ Groq GPT-OSS 120B (tool calling)
+       │ Qwen 3.8 │ Banking   │
+       │ (vision) │ (PSD2)    │
        ▼          ▼           ▼
  ┌──────────────────────────────────────┐  Supabase eu-central-1
  │ Postgres (RLS on every table) + Storage (private bucket) │
@@ -27,7 +27,7 @@
 ## Receipt flow
 1. User uploads a photo → Server Action checks size + magic bytes + `ai_processing` consent.
 2. Image stored at `receipts/<userId>/<receiptId>.jpg` (private bucket, RLS by folder).
-3. Gateway calls `ocr /process`. OCR service strips EXIF (GPS), resizes, sends to Groq Llama 4 Scout in JSON mode.
+3. Gateway calls `ocr /process`. OCR service strips EXIF (GPS), resizes, sends to Groq Qwen 3.8 (qwen/qwen3.8-27b) in JSON mode.
 4. **The model only extracts; our code decides.** `validateReceipt()` recomputes every check:
    missing fields, low confidence (< 0.7), items ≠ total (± 2 cents / 0.5 %, gross or net + VAT),
    VAT ≥ total, VAT rate > 27 % (EU max), invalid/future date, unknown currency, unreadable image.
@@ -49,7 +49,7 @@ Balances are netted per person; `simplifyDebts` suggests the minimum transfers.
 ## GDPR
 | Requirement | Implementation |
 |---|---|
-| EU residency | Supabase Frankfurt, Vercel fra1, Fly fra, Enable Banking (FI) |
+| EU residency | Supabase Frankfurt, Vercel fra1, Render Frankfurt, Enable Banking (FI) |
 | Lawful basis & consent | `consents` table, versioned; AI + bank consent checked server-side |
 | Art. 15/20 access & portability | `/api/export` → `export_my_data()` JSON |
 | Art. 16 rectification | correction UI + `receipt_corrections` log |

@@ -55,3 +55,27 @@ Not a separate decision: Next.js 16 (the current major version) was used instead
 1. Run the SQL migrations in Supabase, sign up, and test a real receipt
 2. Deploy (Vercel + Fly.io) and build the APK
 3. Legal review of the privacy notice; DPIA; records of processing
+
+## 2026-09-30 — Session 3: models, hosting and fixes
+
+### Decisions (approved)
+| # | Topic | Choice | Why |
+|---|---|---|---|
+| 11 | Services hosting | **Render, Frankfurt, free plan** (`render.yaml`), replacing Fly.io | Free tier in the EU. Trade-off: services sleep after ~15 min, so the first request takes 30–60 s |
+| 12 | AI models | **Qwen 3.8** (vision), **GPT-OSS 120B** (assistant), **GPT-OSS 20B** (topic guard) | Groq retired Llama 4 Scout and removed Llama 3.3 70B from the free plan |
+
+### Built / fixed
+- Mobile: collapsible menu, camera fixed in the Android app (`image/*` + CAMERA permission + `IMAGE_CAPTURE` query), gallery picker, toast messages
+- Assistant restricted to product topics (guard model + system prompt); clear errors for a missing service, a rejected key or a retired model
+- `npm run check` / `predev`: validates `.env`, Groq key and models, Supabase keys and tables, and running services
+- OCR: tolerant field-by-field parsing, reasoning disabled for speed, 60 s model timeout, raw model answer logged on localhost
+- `supabase/setup.sql`: one-time setup (migrations, grants for signed-in users, profile backfill, schema reload)
+- Saving a receipt with no remaining flags returns to the receipts list
+- Localhost shows real error causes; production (`NODE_ENV=production`) stays generic
+- Sample receipts in `test-receipts/` for end-to-end testing
+
+### Next steps
+1. Deploy the three services on Render and set their URLs in Vercel
+2. Rebuild the APK against the live URL
+3. Legal review of the privacy notice; DPIA; records of processing
+
