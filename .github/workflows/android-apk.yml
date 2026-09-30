@@ -24,8 +24,13 @@ jobs:
       - name: App icon (Tallyo logo)
         run: npx capacitor-assets generate --android --iconBackgroundColor "#0f766e"
       - run: APP_URL=${{ inputs.app_url }} npx cap sync android
-      - run: cd android && ./gradlew assembleDebug
+       - run: cd android && ./gradlew assembleDebug
+      - name: Find the APK
+        run: 
+          find . -name "*.apk" -not -path "*/node_modules/*"
+          cp android/app/build/outputs/apk/debug/app-debug.apk tallyo.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: receipt-scanner-apk
-          path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          name: tallyo-apk
+          path: expense-scanner/apps/mobile/tallyo.apk
+          if-no-files-found: error
