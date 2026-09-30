@@ -10,6 +10,8 @@
 </p>
 
 <p align="center">
+  <a href="https://tayllo-web.vercel.app/"><b>🌐 Try it in your browser</b></a>
+  &nbsp;·&nbsp;
   <a href="https://github.com/mtauqeer248/Tayllo/releases"><b>📱 Download for Android</b></a>
   &nbsp;·&nbsp;
   <a href="#-how-to-install-the-android-app">How to install</a>
@@ -149,7 +151,7 @@ Your financial data deserves European standards.
         <li>Open <b>Tallyo</b>, tap <b>Start free</b>, create your account and confirm your email.</li>
         <li>Tap <b>Scan</b>, then take a photo or choose one from your gallery. That's it.</li>
       </ol>
-      <b>iPhone?</b> Open the Tallyo website in Safari and tap <b>Share → Add to Home Screen</b>.<br/><br/>
+      <b>iPhone?</b> Open <a href="https://tayllo-web.vercel.app/">tayllo-web.vercel.app</a> in Safari and tap <b>Share → Add to Home Screen</b>.<br/><br/>
       The app needs an internet connection.
     </td>
   </tr>

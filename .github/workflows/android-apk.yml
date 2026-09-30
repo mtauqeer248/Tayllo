@@ -35,8 +35,13 @@ jobs:
       - run: npm install --no-save typescript
       - run: npx cap add android
 
-      - name: Camera permission
-        run: sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />|' android/app/src/main/AndroidManifest.xml
+      - name: Camera permission + camera app visibility (Android 11+)
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <queries>\n        <intent>\n            <action android:name="android.media.action.IMAGE_CAPTURE" />\n        </intent>\n    </queries>|' $M
+          cat $M
+          grep -q 'android.permission.CAMERA' $M
+          grep -q 'android.media.action.IMAGE_CAPTURE' $M
 
       - name: App icon (Tallyo logo)
         run: npx capacitor-assets generate --android --iconBackgroundColor "#0f766e"

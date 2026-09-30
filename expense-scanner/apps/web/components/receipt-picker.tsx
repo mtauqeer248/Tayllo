@@ -17,9 +17,16 @@ export function ReceiptPicker() {
   const open = (camera: boolean) => {
     const el = input.current;
     if (!el) return;
-    // "capture" opens the camera directly; without it Android/iOS show the photo gallery/file picker.
-    if (camera) el.setAttribute('capture', 'environment');
-    else el.removeAttribute('capture');
+    // Camera: accept must be the generic "image/*" — the Android app (Capacitor) only opens the
+    // camera for image/*, and browsers treat it the same. "capture" opens the camera directly.
+    // Gallery: no capture, so Android/iOS show the photo gallery / file picker.
+    if (camera) {
+      el.setAttribute('accept', 'image/*');
+      el.setAttribute('capture', 'environment');
+    } else {
+      el.setAttribute('accept', 'image/jpeg,image/png,image/webp');
+      el.removeAttribute('capture');
+    }
     el.click();
   };
 
