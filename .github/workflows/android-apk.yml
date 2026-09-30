@@ -10,27 +10,56 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: expense-scanner/apps/mobile} }
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: expense-scanner/apps/mobile
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with:
+          node-version: 22
+
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 21 }
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
       - run: npm install
+      - run: npm install --no-save typescript
       - run: npx cap add android
+
       - name: Camera permission
         run: sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />|' android/app/src/main/AndroidManifest.xml
+
       - name: App icon (Tallyo logo)
         run: npx capacitor-assets generate --android --iconBackgroundColor "#0f766e"
+
       - run: APP_URL=${{ inputs.app_url }} npx cap sync android
-       - run: cd android && ./gradlew assembleDebug
+
+      - run: cd android && ./gradlew assembleDebug
+
       - name: Find the APK
-        run: 
+        run: |
           find . -name "*.apk" -not -path "*/node_modules/*"
           cp android/app/build/outputs/apk/debug/app-debug.apk tallyo.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: tallyo-apk
           path: expense-scanner/apps/mobile/tallyo.apk
           if-no-files-found: error
+
+      - name: Publish download (GitHub Release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Tallyo 0.1.${{ github.run_number }} (Android)
+          prerelease: true
+          files: expense-scanner/apps/mobile/tallyo.apk
