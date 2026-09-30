@@ -20,6 +20,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NODE_ENV
+        value: production   # hides internal error details from users
       - key: GROQ_VISION_MODEL
         value: qwen/qwen3.8-27b
       - key: SUPABASE_URL
@@ -48,6 +50,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NODE_ENV
+        value: production   # hides internal error details from users
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -79,6 +83,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NODE_ENV
+        value: production   # hides internal error details from users
       - key: GROQ_CHAT_MODEL
         value: openai/gpt-oss-120b
       - key: GROQ_GUARD_MODEL
