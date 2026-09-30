@@ -1,0 +1,96 @@
+# Render Blueprint: deploys Tallyo's three backend services to Frankfurt (EU).
+# Render → New → Blueprint → pick this repo. Values marked `sync: false` are asked for once during setup.
+# The web app stays on Vercel; after deploying, put these three service URLs into Vercel.
+
+services:
+  - type: web
+    name: tallyo-ocr
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: expense-scanner
+    buildCommand: npm ci --include=dev --workspace @es/ocr --include-workspace-root && npm run build --workspace @es/ocr
+    startCommand: node services/ocr/dist/server.js
+    healthCheckPath: /healthz
+    buildFilter:
+      paths:
+        - expense-scanner/services/ocr/**
+        - expense-scanner/packages/**
+        - expense-scanner/package-lock.json
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: GROQ_VISION_MODEL
+        value: meta-llama/llama-4-scout-17b-16e-instruct
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: INTERNAL_SERVICE_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+
+  - type: web
+    name: tallyo-ledger
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: expense-scanner
+    buildCommand: npm ci --include=dev --workspace @es/ledger --include-workspace-root && npm run build --workspace @es/ledger
+    startCommand: node services/ledger/dist/server.js
+    healthCheckPath: /healthz
+    buildFilter:
+      paths:
+        - expense-scanner/services/ledger/**
+        - expense-scanner/packages/**
+        - expense-scanner/package-lock.json
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: INTERNAL_SERVICE_SECRET
+        sync: false
+      # Optional — only needed for bank matching (Enable Banking):
+      - key: ENABLE_BANKING_APP_ID
+        sync: false
+      - key: ENABLE_BANKING_PRIVATE_KEY_PEM
+        sync: false
+      - key: ENABLE_BANKING_REDIRECT_URL
+        value: https://tayllo-web.vercel.app/bank/callback
+
+  - type: web
+    name: tallyo-chatbot
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: expense-scanner
+    buildCommand: npm ci --include=dev --workspace @es/chatbot --include-workspace-root && npm run build --workspace @es/chatbot
+    startCommand: node services/chatbot/dist/server.js
+    healthCheckPath: /healthz
+    buildFilter:
+      paths:
+        - expense-scanner/services/chatbot/**
+        - expense-scanner/packages/**
+        - expense-scanner/package-lock.json
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: GROQ_CHAT_MODEL
+        value: llama-3.3-70b-versatile
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: INTERNAL_SERVICE_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # The chatbot calls the other two services — paste their Render URLs (https://….onrender.com)
+      - key: OCR_SERVICE_URL
+        sync: false
+      - key: LEDGER_SERVICE_URL
+        sync: false

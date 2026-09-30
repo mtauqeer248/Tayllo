@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createService, db, env, start } from '@es/service-kit';
+import { createService, db, env, HttpError, start } from '@es/service-kit';
 import { runTool, TOOL_DEFS } from './tools';
 import { isInScope, isShortFollowUp, OFF_TOPIC_REPLY } from './guard';
 
@@ -57,21 +57,7 @@ app.post('/chat', async (req) => {
   let navigateTo: string | undefined;
   let reply = '';
   for (let step = 0; step < 5; step++) {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env('GROQ_API_KEY')}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: env('GROQ_CHAT_MODEL', 'llama-3.3-70b-versatile'),
-        temperature: 0.2,
-        max_completion_tokens: 600,
-        messages,
-        tools: TOOL_DEFS,
-        tool_choice: 'auto',
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`Groq ${res.status}`);
-    const json = (await res.json()) as { choices: { message: { content: string | null; tool_calls?: ToolCall[] } }[] };
+    const json = await callGroq(messages, req.log);
     const msg = json.choices[0]!.message;
     if (!msg.tool_calls?.length) {
       reply = msg.content ?? '';
@@ -94,6 +80,44 @@ app.post('/chat', async (req) => {
   ]);
   return { reply, navigate_to: navigateTo };
 });
+
+type Choice = { choices: { message: { content: string | null; tool_calls?: ToolCall[] } }[] };
+
+/**
+ * One Groq call with clear errors. Llama sometimes emits a malformed tool call
+ * (400 "tool_use_failed"); we retry once, then fall back to a plain answer without tools.
+ */
+async function callGroq(messages: Msg[], log: { error: (o: object, m: string) => void }): Promise<Choice> {
+  const attempt = async (withTools: boolean) => {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env('GROQ_API_KEY')}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: env('GROQ_CHAT_MODEL', 'llama-3.3-70b-versatile'),
+        temperature: 0.2,
+        max_completion_tokens: 600,
+        messages,
+        ...(withTools ? { tools: TOOL_DEFS, tool_choice: 'auto' } : {}),
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, text };
+  };
+
+  let r = await attempt(true);
+  if (!r.ok && r.status === 400 && r.text.includes('tool_use_failed')) r = await attempt(true);
+  if (!r.ok && r.status === 400 && r.text.includes('tool_use_failed')) r = await attempt(false);
+  if (r.ok) return JSON.parse(r.text) as Choice;
+
+  let detail = r.text.slice(0, 300);
+  try { detail = (JSON.parse(r.text) as { error?: { message?: string } }).error?.message ?? detail; } catch { /* raw text */ }
+  log.error({ groqStatus: r.status, groqError: detail }, 'Groq request failed');
+  if (r.status === 401) throw new HttpError(424, 'AI key rejected by Groq — check GROQ_API_KEY.');
+  if (r.status === 429) throw new HttpError(429, 'The AI is busy (rate limit). Please try again in a minute.');
+  if (r.status === 404 || /model/i.test(detail)) throw new HttpError(424, `AI model problem: ${detail}`);
+  throw new HttpError(424, 'The AI provider returned an error. Please try again.');
+}
 
 app.delete('/chat', async (req) => {
   await db().from('chat_messages').delete().eq('user_id', req.userId);
