@@ -10,7 +10,7 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: apps/mobile } }
+    defaults: { run: { working-directory: expense-scanner/apps/mobile} }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
