@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { POLICY_VERSION } from '@/lib/policy';
@@ -21,11 +22,14 @@ async function signup(formData: FormData) {
   if (!parsed.success) fail('/signup', 'Please check the form: a password of 10+ characters and the two required boxes ticked.');
   const v = parsed.data;
   const sb = await supabase();
+  // Where the confirmation email sends people back to: APP_URL, or else the site the form was sent from.
+  const h = await headers();
+  const origin = process.env.APP_URL || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host')}`;
   const { error } = await sb.auth.signUp({
     email: v.email,
     password: v.password,
     options: {
-      emailRedirectTo: `${process.env.APP_URL}/login?ok=${encodeURIComponent('Email confirmed. You can sign in now.')}`,
+      emailRedirectTo: `${origin}/auth/confirm`,
       data: {
         display_name: v.display_name,
         policy_version: POLICY_VERSION,
@@ -33,8 +37,23 @@ async function signup(formData: FormData) {
       },
     },
   });
-  if (error) fail('/signup', /password/i.test(error.message) ? error.message : 'Could not create the account. Please try again.');
+  if (error) {
+    console.error('[signup]', error.status, error.code, error.message);
+    fail('/signup', signupError(error.code, error.message));
+  }
   done('/login', 'Account created. Check your email to confirm it, then sign in.');
+}
+
+/** Supabase auth messages are safe to show; map the common ones to plain language. */
+function signupError(code: string | undefined, message: string): string {
+  if (code === 'over_email_send_rate_limit' || /rate limit/i.test(message)) {
+    return 'Too many sign-ups in a short time. Please try again in an hour.';
+  }
+  if (code === 'user_already_exists' || /already registered/i.test(message)) return 'This email already has an account. Please sign in.';
+  if (/password/i.test(message)) return message;
+  if (/database error/i.test(message)) return 'Could not set up your account (database). Please try again later.';
+  if (/email/i.test(message)) return message;
+  return 'Could not create the account. Please try again.';
 }
 
 export default async function SignupPage() {
